@@ -1,0 +1,23 @@
+This pidgin-plugin implements xmpp message delivery receipts (XEP-0184).
+When no delivering confirmation is displayed, it is also possible that
+the receiver doesn't support the extension.
+
+
+COMPILING
+
+To compile the plugin, run
+
+	$ make all
+
+You will need pidgin delevopment packages
+(link in ubuntu: libpurple-dev and pidgin-dev).
+
+
+INSTALL
+
+To copy the extension to your personal plugin folder (~/.purple/plugins)
+run:
+
+	$ make install
+
+Now you may activate the extension within the pidgin settings.
