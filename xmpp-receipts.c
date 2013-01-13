@@ -26,7 +26,7 @@
 
 #define PURPLE_PLUGINS
 
-#define DISPLAY_VERSION "0.3"
+#define DISPLAY_VERSION "0.4"
 
 #include "gtkplugin.h"
 #include "version.h"
@@ -42,40 +42,96 @@
 
 #include "util.h"
 
-//#define DEBUG	1
+#define DEBUG	1
+
+typedef struct
+{
+	GtkTextBuffer	*textbuffer;
+	gint			offset;
+}message_info;
 
 void 		*xmpp_console_handle 	= NULL;
+static GHashTable *ht_locations 	= NULL;
 
 /**
- * \fn display_message_receipt
- * \brief Displays the incoming receipt
+ * \fn add_message_iter
+ * \brief Stores the current position in the chat window
  */
-void display_message_receipt(PurpleConnection *gc, const char* from, const char* to){
-
+void add_message_iter(PurpleConnection *gc, const char* to, const gchar* messageid)
+{
 	#ifdef DEBUG
-	printf("from: %s to: %s \n", from, to);
+	printf("to: %s \n", to);
 	#endif
 
 	PurpleAccount *acct 		= purple_connection_get_account (gc);
 
 	if(!acct) return;
 
-	PurpleConversation *conv 	= purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, from, acct);
+	PurpleConversation *conv 	= purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, to, acct);
 
 	if(!conv) return;
 
 	PidginConversation *gtkconv = PIDGIN_CONVERSATION(conv);
 	GtkIMHtml *imhtml = GTK_IMHTML(gtkconv->imhtml);
 
-	GtkTextIter location;
+	message_info *info 	= g_new(message_info, 1);
+
+	info->textbuffer	= imhtml->text_buffer;
+	GtkTextIter		location;
 	gtk_text_buffer_get_end_iter(imhtml->text_buffer, &location);
 
-	gtk_text_buffer_insert (imhtml->text_buffer,
-								&location,
-								" ✓",
-								-1);
+	info->offset		= gtk_text_iter_get_offset (&location);
 
-	//purple_conv_im_write(PURPLE_CONV_IM(conv), NULL, "message delivered", PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_NO_LOG, 						time(NULL));
+
+	//Insert the location to the table, use messageid as key
+	g_hash_table_insert(ht_locations, strdup(messageid), info);
+
+	#ifdef DEBUG
+	printf("attached key: %s, table size now %d \n", messageid, g_hash_table_size(ht_locations));
+	#endif
+
+}
+
+/**
+ * \fn display_message_receipt
+ * \brief Displays the received receipt at the correct position
+ */
+void display_message_receipt(const char* strId){
+
+	#ifdef DEBUG
+	if(strId == NULL)
+		printf("NO ID\n");
+	else
+		printf("id is: %s \n", strId);
+	#endif
+
+	if(strId == NULL)
+		return;
+
+	message_info* info = (message_info*) g_hash_table_lookup(ht_locations, strId);
+
+	#ifdef DEBUG
+	printf("insert...");
+	#endif
+
+	if(info != NULL)
+	{
+		GtkTextIter		location;
+		gtk_text_buffer_get_iter_at_offset (info->textbuffer,
+											&location,
+											info->offset);
+		gtk_text_iter_forward_line (&location);
+		gtk_text_iter_forward_to_line_end (&location);
+
+		gtk_text_buffer_insert (info->textbuffer,
+							&location,
+							" ✓",
+							-1);
+	}
+	#ifdef DEBUG
+	else
+		printf("failed: id not found\n");
+	#endif
 }
 
 /**
@@ -114,7 +170,6 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 
 			const char* strFrom	= xmlnode_get_attrib(*packet , "from");
 			const char* strTo 	= xmlnode_get_attrib(*packet , "to");
-			const char* strId 	= xmlnode_get_attrib(*packet , "id");
 
 			//Answer to an request and verify namespace
 			if(nodeRequest)
@@ -122,6 +177,8 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 				#ifdef DEBUG
 				printf("got request\n");
 				#endif
+
+				const char* strId 	= xmlnode_get_attrib(*packet , "id");
 
 				const char* strNS = xmlnode_get_namespace(nodeRequest);
 
@@ -149,10 +206,11 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 				#endif
 
 				const char* strNS = xmlnode_get_namespace(nodeReceived);
+				const char* strId 	= xmlnode_get_attrib(nodeReceived , "id");
 
-				if(strcmp(strNS, "urn:xmpp:receipts") == 0)
+				if (strcmp(strNS, "urn:xmpp:receipts") == 0)
 				{
-					display_message_receipt(gc, strFrom, strTo);
+					display_message_receipt(strId);
 				}
 			}
 		}
@@ -188,7 +246,15 @@ xmlnode_sending_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 				{
 					xmlnode *child	= xmlnode_new_child (*packet, "request");
 					xmlnode_set_attrib (child, "xmlns", "urn:xmpp:receipts");
+
+					const char* strTo 	= xmlnode_get_attrib(*packet , "to");
+					const char* strId 	= xmlnode_get_attrib(*packet , "id");
+
+					add_message_iter(gc, strTo, strId);
+
 				}
+
+
 			}
 		}
 	}
@@ -204,6 +270,7 @@ plugin_load(PurplePlugin *plugin)
 
 	xmpp_console_handle = plugin;
 
+	ht_locations	= g_hash_table_new(g_str_hash, g_str_equal);
 
 	purple_signal_connect(jabber, "jabber-receiving-xmlnode", xmpp_console_handle,
 			    PURPLE_CALLBACK(xmlnode_received_cb), NULL);
