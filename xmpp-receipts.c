@@ -48,6 +48,7 @@ typedef struct
 {
 	GtkTextBuffer	*textbuffer;
 	gint			offset;
+	gint			lines;
 }message_info;
 
 void 		*xmpp_console_handle 	= NULL;
@@ -57,7 +58,7 @@ static GHashTable *ht_locations 	= NULL;
  * \fn add_message_iter
  * \brief Stores the current position in the chat window
  */
-void add_message_iter(PurpleConnection *gc, const char* to, const gchar* messageid)
+void add_message_iter(PurpleConnection *gc, const char* to, const gchar* messageid, int newlines)
 {
 	#ifdef DEBUG
 	printf("to: %s \n", to);
@@ -81,7 +82,7 @@ void add_message_iter(PurpleConnection *gc, const char* to, const gchar* message
 	gtk_text_buffer_get_end_iter(imhtml->text_buffer, &location);
 
 	info->offset		= gtk_text_iter_get_offset (&location);
-
+	info->lines			= newlines;
 
 	//Insert the location to the table, use messageid as key
 	g_hash_table_insert(ht_locations, strdup(messageid), info);
@@ -120,13 +121,15 @@ void display_message_receipt(const char* strId){
 		gtk_text_buffer_get_iter_at_offset (info->textbuffer,
 											&location,
 											info->offset);
-		gtk_text_iter_forward_line (&location);
+		gtk_text_iter_forward_lines (&location, info->lines);
 		gtk_text_iter_forward_to_line_end (&location);
 
 		gtk_text_buffer_insert (info->textbuffer,
 							&location,
 							" ✓",
 							-1);
+
+		g_hash_table_remove (ht_locations, strId);
 	}
 	#ifdef DEBUG
 	else
@@ -205,7 +208,7 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 				printf("got received\n");
 				#endif
 
-				const char* strNS = xmlnode_get_namespace(nodeReceived);
+				const char* strNS 	= xmlnode_get_namespace(nodeReceived);
 				const char* strId 	= xmlnode_get_attrib(nodeReceived , "id");
 
 				if (strcmp(strNS, "urn:xmpp:receipts") == 0)
@@ -241,20 +244,37 @@ xmlnode_sending_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 		{
 			if(strcmp((*packet)->name, "message") == 0)
 			{
+				xmlnode *nodeBody	= xmlnode_get_child (*packet, "body");
+
+				int newlines 	= 1;
+
 				//Only for messages containing text (no status messages etc)
-				if(xmlnode_get_child (*packet, "body"))
+				if(nodeBody)
 				{
+					char*	text = xmlnode_get_data(nodeBody);
+					if(text)
+					{
+						int	sz			= strlen(text);
+						int i;
+						for (i = 0; i < sz; i++) {
+							if (text[i] == '\n')
+								newlines++;
+						}
+
+						#ifdef DEBUG
+						printf("lines: %d\n", newlines);
+						#endif
+
+						g_free(text);
+					}
 					xmlnode *child	= xmlnode_new_child (*packet, "request");
 					xmlnode_set_attrib (child, "xmlns", "urn:xmpp:receipts");
 
 					const char* strTo 	= xmlnode_get_attrib(*packet , "to");
 					const char* strId 	= xmlnode_get_attrib(*packet , "id");
 
-					add_message_iter(gc, strTo, strId);
-
+					add_message_iter(gc, strTo, strId, newlines);
 				}
-
-
 			}
 		}
 	}
