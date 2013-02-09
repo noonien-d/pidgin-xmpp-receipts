@@ -229,6 +229,33 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 </message>
 * */
 
+/**
+ * \fn deleting_conversation_remove_items
+ * \brief Checks if the entry belongs to a given textbuffer
+ * \param user_data a pointer to the searched textbuffer.
+ */
+static gboolean
+deleting_conversation_remove_items(gpointer key, gpointer value,
+									gpointer user_data)
+{
+	return (((message_info*)value)->textbuffer == user_data) ? TRUE : FALSE;
+}
+
+/**
+ * \fn deleting_conversation_cb
+ * \brief Deletes all references to this conversation from the hashtable
+ */
+static void
+deleting_conversation_cb(PurpleConversation *conv)
+{
+	g_hash_table_foreach_remove(ht_locations,
+								deleting_conversation_remove_items,
+								GTK_IMHTML(PIDGIN_CONVERSATION(conv)->imhtml)->text_buffer);
+            
+	#ifdef DEBUG
+	printf("conversation closed, table size now %d \n", g_hash_table_size(ht_locations));
+	#endif
+}
 
 /**
  * \fn xmlnode_sending_cb
@@ -296,6 +323,15 @@ plugin_load(PurplePlugin *plugin)
 			    PURPLE_CALLBACK(xmlnode_received_cb), NULL);
 	purple_signal_connect(jabber, "jabber-sending-xmlnode", xmpp_console_handle,
 			    PURPLE_CALLBACK(xmlnode_sending_cb), NULL);
+
+
+    //Connect signals for conversations to clean references
+    void *conv_handle = purple_conversations_get_handle();
+
+    purple_signal_connect(conv_handle, "deleting-conversation",
+							plugin,
+							PURPLE_CALLBACK(deleting_conversation_cb),
+							NULL);
 
 	return TRUE;
 }
