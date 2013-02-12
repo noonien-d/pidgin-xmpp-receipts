@@ -4,7 +4,7 @@
  * For more information about the XEP visit:
  * 		http://xmpp.org/extensions/xep-0184.html
  *
- * Copyright (C) 2012, Ferdinand Stehle
+ * Copyright (C) 2012, Ferdinand Stehle, development[at]kondorgulasch.de
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 
 #include "util.h"
 
-#define DEBUG	1
+//#define DEBUG	1
 
 typedef struct
 {
