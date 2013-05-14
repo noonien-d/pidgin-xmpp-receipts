@@ -26,7 +26,7 @@
 
 #define PURPLE_PLUGINS
 
-#define DISPLAY_VERSION "0.4"
+#define DISPLAY_VERSION "0.5"
 
 #include "gtkplugin.h"
 #include "version.h"
@@ -365,7 +365,7 @@ static PurplePluginInfo info =
 													/**  description    */
 	"Implements XEP-0184: Message Delivery Receipts within pidgin.",
 	"Noonien (fsmail@kondorgulasch.de)",          	/**< author         */
-	"http//pidgin.im",                            	/**< homepage       */
+	"https://www.assembla.com/code/pidgin-xmpp-receipts/git/nodes",     /**< homepage       */
 
 	plugin_load,                                  	/**< load           */
 	plugin_unload,                                	/**< unload         */
