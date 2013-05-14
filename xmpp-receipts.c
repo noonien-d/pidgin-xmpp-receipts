@@ -172,7 +172,6 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 			xmlnode* nodeRequest = xmlnode_get_child (*packet, "request");
 
 			const char* strFrom	= xmlnode_get_attrib(*packet , "from");
-			const char* strTo 	= xmlnode_get_attrib(*packet , "to");
 
 			//Answer to an request and verify namespace
 			if(nodeRequest)
@@ -188,8 +187,8 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 				if(strcmp(strNS, "urn:xmpp:receipts") == 0)
 				{
 					GString*	sendpacket 	= g_string_new("");
-					g_string_printf(sendpacket, "<message from='%s' to='%s'>\n<received xmlns='urn:xmpp:receipts' id='%s'/></message>",
-					strTo, strFrom, strId);
+					g_string_printf(sendpacket, "<message to='%s'>\n<received xmlns='urn:xmpp:receipts' id='%s'/></message>",
+						strFrom, strId);
 
 					#ifdef DEBUG
 					printf("\n%s\n", strNS);
