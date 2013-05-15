@@ -138,23 +138,6 @@ void display_message_receipt(const char* strId){
 }
 
 /**
- * \fn xmpp_send_string
- * \brief Sends an xmpp-string with the given connection
- */
-void
-xmpp_send_string(PurpleConnection *gc, char* str)
-{
-	PurplePluginProtocolInfo *prpl_info = NULL;
-
-	if (gc)
-		prpl_info = PURPLE_PLUGIN_PROTOCOL_INFO(gc->prpl);
-
-	//XMPP senden
-	if (prpl_info && prpl_info->send_raw != NULL)
-		prpl_info->send_raw(gc, str, strlen(str));
-}
-
-/**
  * \fn xmlnode_received_cb
  * \brief Reacts to requests and receipts
  */
@@ -186,17 +169,18 @@ xmlnode_received_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 
 				if(strcmp(strNS, "urn:xmpp:receipts") == 0)
 				{
-					GString*	sendpacket 	= g_string_new("");
-					g_string_printf(sendpacket, "<message to='%s'>\n<received xmlns='urn:xmpp:receipts' id='%s'/></message>",
-						strFrom, strId);
+					xmlnode *message = xmlnode_new("message");
+					xmlnode_set_attrib(message, "to", strFrom);
+					
+					xmlnode *received = xmlnode_new_child(message, "received");
+					xmlnode_set_namespace(received, "urn:xmpp:receipts");
+					
+					xmlnode_set_attrib(received, "id", strId);
 
-					#ifdef DEBUG
-					printf("\n%s\n", strNS);
-					#endif
-
-					xmpp_send_string(gc, sendpacket->str);
-
-					g_string_free(sendpacket, TRUE);
+					purple_signal_emit(purple_connection_get_prpl(gc), "jabber-sending-xmlnode", gc, &message);
+					
+					if (message != NULL)
+						xmlnode_free(message);
 				}
 			}
 			//Find incoming receipt and call the display-function
