@@ -313,6 +313,17 @@ plugin_load(PurplePlugin *plugin)
 
 	if (!jabber)
 		return FALSE;
+	
+	//Publish support via caps
+	gboolean ok;
+	purple_plugin_ipc_call (jabber, "add_feature", &ok, "urn:xmpp:receipts");
+
+	#ifdef DEBUG
+	if (ok)
+		printf("receipt feature added\n");
+	else
+		printf("receipt feature not added (will work anyway with most clients)\n");
+	#endif
 
 	xmpp_console_handle = plugin;
 
