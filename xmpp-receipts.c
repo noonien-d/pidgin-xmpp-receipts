@@ -26,7 +26,7 @@
 
 #define PURPLE_PLUGINS
 
-#define DISPLAY_VERSION "0.5"
+#define DISPLAY_VERSION "0.6"
 
 #include "gtkplugin.h"
 #include "version.h"

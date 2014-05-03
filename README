@@ -7,7 +7,7 @@ COMPILING
 
 To compile the plugin, run
 
-	$ make all
+	$ make
 
 You will need pidgin development packages
 (link in ubuntu: libpurple-dev and pidgin-dev).
