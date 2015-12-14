@@ -26,7 +26,7 @@
 
 #define PURPLE_PLUGINS
 
-#define DISPLAY_VERSION "0.6"
+#define DISPLAY_VERSION "0.7"
 
 #include "gtkplugin.h"
 #include "version.h"
@@ -290,6 +290,11 @@ xmlnode_sending_cb(PurpleConnection *gc, xmlnode **packet, gpointer null)
 	}
 }
 
+void free_message_info(gpointer data)
+{
+	g_free(data);
+}
+
 static gboolean
 plugin_load(PurplePlugin *plugin)
 {
@@ -311,7 +316,7 @@ plugin_load(PurplePlugin *plugin)
 
 	xmpp_console_handle = plugin;
 
-	ht_locations	= g_hash_table_new(g_str_hash, g_str_equal);
+	ht_locations	= g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
 	purple_signal_connect(jabber, "jabber-receiving-xmlnode", xmpp_console_handle,
 			    PURPLE_CALLBACK(xmlnode_received_cb), NULL);
@@ -333,8 +338,7 @@ plugin_load(PurplePlugin *plugin)
 static gboolean
 plugin_unload(PurplePlugin *plugin)
 {
-
-
+	g_hash_table_destroy(ht_locations);
 
 	return TRUE;
 }
