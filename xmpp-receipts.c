@@ -320,8 +320,8 @@ plugin_load(PurplePlugin *plugin)
 
 	purple_signal_connect(jabber, "jabber-receiving-xmlnode", xmpp_console_handle,
 			    PURPLE_CALLBACK(xmlnode_received_cb), NULL);
-	purple_signal_connect(jabber, "jabber-sending-xmlnode", xmpp_console_handle,
-			    PURPLE_CALLBACK(xmlnode_sending_cb), NULL);
+	purple_signal_connect_priority(jabber, "jabber-sending-xmlnode", xmpp_console_handle,
+			    PURPLE_CALLBACK(xmlnode_sending_cb), NULL, -101);
 
 
     //Connect signals for conversations to clean references
