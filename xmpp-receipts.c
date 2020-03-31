@@ -363,8 +363,8 @@ static PurplePluginInfo info =
 	"Send and receive xmpp receipts.",
 													/**  description    */
 	"Implements XEP-0184: Message Delivery Receipts within pidgin.",
-	"Noonien (fsmail@kondorgulasch.de)",          	/**< author         */
-	"https://www.assembla.com/code/pidgin-xmpp-receipts/git/nodes",     /**< homepage       */
+	"Ferdinand Stehle (development@kondorgulasch.de)",          	/**< author         */
+	"https://github.com/noonien-d/pidgin-xmpp-receipts/",     /**< homepage       */
 
 	plugin_load,                                  	/**< load           */
 	plugin_unload,                                	/**< unload         */
