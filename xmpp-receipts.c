@@ -343,8 +343,6 @@ plugin_unload(PurplePlugin *plugin)
 	return TRUE;
 }
 
-static GList dep = {"prpl-jabber",NULL,NULL};
-
 static PurplePluginInfo info =
 {
 	PURPLE_PLUGIN_MAGIC,
@@ -353,7 +351,7 @@ static PurplePluginInfo info =
 	PURPLE_PLUGIN_STANDARD,                       	/**< type           */
 	PIDGIN_PLUGIN_TYPE,                           	/**< ui_requirement */
 	0,                                            	/**< flags          */
-	&dep,                                         	/**< dependencies   */
+	NULL,                                         	/**< dependencies   */
 	PURPLE_PRIORITY_LOWEST,                      	/**< priority       */
 
 	"gtk-xmpp-receipts",                            /**< id             */
@@ -385,8 +383,7 @@ static PurplePluginInfo info =
 static void
 init_plugin(PurplePlugin *plugin)
 {
-
-
+plugin->info->dependencies = g_list_append(plugin->info->dependencies, "prpl-jabber");
 }
 
 PURPLE_INIT_PLUGIN(xmppconsole, init_plugin, info)
